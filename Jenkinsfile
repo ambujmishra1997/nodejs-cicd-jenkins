@@ -7,10 +7,6 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-
-                sh 'echo "Repository checked out successfully"'
-                sh 'pwd'
-                sh 'ls -la'
             }
         }
 
@@ -18,8 +14,6 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 dir('src') {
-                    sh 'node --version'
-                    sh 'npm --version'
                     sh 'npm ci'
                 }
             }
@@ -36,18 +30,13 @@ pipeline {
 
 
         stage('Integration Test') {
-
             steps {
 
                 dir('src') {
 
                     sh '''
-                        echo "Starting application..."
-
                         npm start > app.log 2>&1 &
                         APP_PID=$!
-
-                        echo "Waiting for application..."
 
                         for i in 1 2 3 4 5 6 7 8 9 10
                         do
@@ -68,16 +57,40 @@ pipeline {
                             sleep 2
                         done
 
-                        echo "Running integration tests..."
-
                         npm test
                         TEST_STATUS=$?
 
-                        echo "Stopping application..."
                         kill $APP_PID || true
 
                         exit $TEST_STATUS
                     '''
+                }
+            }
+        }
+
+
+        stage('Security Scan') {
+
+            steps {
+
+                sh '''
+                    echo "Running Trivy security scan..."
+
+                    trivy --config "" fs . \
+                    --severity HIGH,CRITICAL \
+                    --ignore-unfixed \
+                    --format json \
+                    --output trivy.result.json \
+                    --exit-code 1
+                '''
+            }
+
+            post {
+
+                always {
+
+                    archiveArtifacts artifacts: 'trivy.result.json',
+                                     allowEmptyArchive: true
                 }
             }
         }
