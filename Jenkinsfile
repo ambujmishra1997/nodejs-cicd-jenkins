@@ -95,5 +95,25 @@ pipeline {
             }
         }
 
+
+
+        stage('Build Docker Image') {
+
+            steps {
+
+                 sh '''
+                    echo "Building Docker image..."
+
+                    docker build \
+                    -t nodejs-demoapp:${GIT_COMMIT} \
+                    .
+
+                   echo "Docker image created successfully"
+
+                   docker images nodejs-demoapp
+             '''
+            }
+        }
+
     }
 }
