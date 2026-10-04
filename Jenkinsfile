@@ -17,5 +17,21 @@ pipeline {
                 sh 'ls -la'
             }
         }
+
+
+        stage('Install Dependencies') {
+
+            steps {
+
+                dir('src') {
+
+                    sh 'node --version'
+
+                    sh 'npm --version'
+
+                    sh 'npm ci'
+                }
+            }
+        }
     }
 }
